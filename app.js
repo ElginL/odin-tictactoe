@@ -50,25 +50,40 @@ const gameBoard = (() => {
 // Factory Functions
 const playerFactory = function(marker) {
     const playerMarker = marker;
+    let playerName = "";
+
     const rows = [3, 3, 3];
     const cols = [3, 3, 3];
 
+    const setPlayerName = function(name) {
+        playerName = name;
+    }
+
     const play = function(e) {
-        rows[e.target.getAttribute("row")] -= 1;
-        cols[e.target.getAttribute("col")] -= 1;
         gameBoard.markBoard(playerMarker, e);
+        if (e.target.textContent === "") {
+            rows[e.target.getAttribute("row")] -= 1;
+            cols[e.target.getAttribute("col")] -= 1;
+        }
     };
+
+    const resetRowsAndCols = function() {
+        for (let i = 0; i < 3; i++) {
+            rows[i] = 3;
+            cols[i] = 3;
+        }
+    }
 
     const checkWin = function() {
         for (let i = 0; i < 3; i++) {
             if (rows[i] === 0 || cols[i] === 0 || gameBoard.checkDiagonalWinner(playerMarker)) {
-                UIController.displayEndGame();
+                UIController.displayEndGame(playerName);
                 break;
             }
         }
     };
 
-    return { play, checkWin };
+    return { play, checkWin, setPlayerName, resetRowsAndCols };
 }
 
 const gameFlow = (() => {
@@ -77,6 +92,11 @@ const gameFlow = (() => {
 
     let currentPlayer = player1;
 
+    const setUpPlayers = function(player1Name, player2Name) {
+        player1.setPlayerName(player1Name);
+        player2.setPlayerName(player2Name);
+    }
+
     const playRound = function(e) {
         currentPlayer.play(e);
         currentPlayer.checkWin();
@@ -84,18 +104,17 @@ const gameFlow = (() => {
     };
 
     const reset = function() {
-        player1 = playerFactory("X");
-        player2 = playerFactory("O");
+        player1.resetRowsAndCols();
+        player2.resetRowsAndCols();
         currentPlayer = player1;
     }
 
-    return { playRound, reset };
+    return { playRound, reset, setUpPlayers };
 })();
 
 const UIController = (() => {
     const modesContainer = document.querySelector(".mode-selection-container");
     const playerSetupContainer = document.querySelector(".player-setup-container");
-    // const playerCardContainer = document.querySelector(".player-card-container");
     const modal = document.querySelector(".modal");
 
     const clearAllDisplay = function() {
@@ -140,7 +159,6 @@ const UIController = (() => {
         playerSetupContainer.style.display = "flex";
         const playerCardContainer = document.createElement("div");
         playerCardContainer.classList.add("player-card-container");
-        // modesContainer.style.display = "none";
 
         const createPlayerContainer = function(playerIndex) {
             const container = document.createElement("div");
@@ -149,6 +167,7 @@ const UIController = (() => {
             header.textContent = playerIndex;
             const nameInput = document.createElement("input");
             nameInput.setAttribute("placeholder", "Enter your name");
+            nameInput.classList.add("player-name");
             container.appendChild(header);
             container.appendChild(nameInput);
             playerCardContainer.appendChild(container);
@@ -159,7 +178,11 @@ const UIController = (() => {
 
         const startButton = document.createElement("button");
         startButton.textContent = "Start";
-        startButton.addEventListener("click", setUpGame);
+        startButton.addEventListener("click", () => {
+            const names = document.querySelectorAll(".player-name");
+            gameFlow.setUpPlayers(names[0].value, names[1].value);
+            setUpGame();
+        });
 
         playerSetupContainer.appendChild(playerCardContainer);
         playerSetupContainer.appendChild(startButton);
@@ -167,18 +190,17 @@ const UIController = (() => {
 
     const setUpGame = function() {
         clearAllDisplay();
-        // playerSetupContainer.style.display = "none";
         gameBoard.displayBoard();
     }
 
-    const displayEndGame = function() {
+    const displayEndGame = function(playerName) {
         modal.style.display = "flex";
 
         const endGameDiv = document.createElement("div");
         endGameDiv.classList.add("end-game-menu");
 
         const message = document.createElement("h2");
-        message.textContent = `____ is the winner!`;
+        message.textContent = `${playerName} is the winner!`;
 
         const buttonsContainer = document.createElement("div");
 
