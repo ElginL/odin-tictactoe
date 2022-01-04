@@ -1,0 +1,33 @@
+body {
+    margin: 0;
+}
+
+header {
+    background-color: #41b3a3;
+}
+
+.page-title {
+    color: white;
+    text-align: center;
+    margin-top: 0;
+    padding: 30px;
+    font-size: 3rem;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.board-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 50%;
+    height: 60vh;
+    margin: 0 auto;
+}
+
+.board-grid-container {
+    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 4rem;
+}
