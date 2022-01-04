@@ -44,7 +44,19 @@ const gameBoard = (() => {
         return topLeftToBotRight || botLeftToTopRight;
     }
 
-    return { displayBoard, markBoard, checkDiagonalWinner, hideBoard };
+    const isDraw = function() {
+        let filledCount = 0;
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                if (board[row][col] !== "") {
+                    filledCount++;
+                }
+            }
+        }
+        return filledCount === 9;
+    }
+
+    return { displayBoard, markBoard, checkDiagonalWinner, hideBoard, isDraw };
 })();
 
 // Factory Functions
@@ -60,11 +72,11 @@ const playerFactory = function(marker) {
     }
 
     const play = function(e) {
-        gameBoard.markBoard(playerMarker, e);
         if (e.target.textContent === "") {
             rows[e.target.getAttribute("row")] -= 1;
             cols[e.target.getAttribute("col")] -= 1;
         }
+        gameBoard.markBoard(playerMarker, e);
     };
 
     const resetRowsAndCols = function() {
@@ -76,11 +88,13 @@ const playerFactory = function(marker) {
 
     const checkWin = function() {
         for (let i = 0; i < 3; i++) {
+            console.log(rows[i]);
             if (rows[i] === 0 || cols[i] === 0 || gameBoard.checkDiagonalWinner(playerMarker)) {
-                UIController.displayEndGame(playerName);
-                break;
+                UIController.displayEndGame(true, playerName);
+                return true;
             }
         }
+        return false;
     };
 
     return { play, checkWin, setPlayerName, resetRowsAndCols };
@@ -99,7 +113,10 @@ const gameFlow = (() => {
 
     const playRound = function(e) {
         currentPlayer.play(e);
-        currentPlayer.checkWin();
+        // currentPlayer.checkWin();
+        if (!currentPlayer.checkWin() && gameBoard.isDraw()) {
+            UIController.displayEndGame(false);
+        };
         currentPlayer = currentPlayer === player1 ? player2 : player1;
     };
 
@@ -193,14 +210,19 @@ const UIController = (() => {
         gameBoard.displayBoard();
     }
 
-    const displayEndGame = function(playerName) {
+    const displayEndGame = function(hasWinner, playerName="") {
         modal.style.display = "flex";
+        console.log("Hello!");
 
         const endGameDiv = document.createElement("div");
         endGameDiv.classList.add("end-game-menu");
 
         const message = document.createElement("h2");
-        message.textContent = `${playerName} is the winner!`;
+        if (hasWinner) {
+            message.textContent = `${playerName} is the winner!`;
+        } else {
+            message.textContent = "Draw!";
+        }
 
         const buttonsContainer = document.createElement("div");
 
