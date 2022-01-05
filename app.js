@@ -25,15 +25,16 @@ const gameBoard = (() => {
         }
     }
 
-    const hideBoard = function() {
-        boardContainer.style.display = "none";
+    const emptyBoard = function() {
+        boardContainer.innerHTML = ``;
     }
 
     const markBoard = function(marker, e) {
         const row = e.target.getAttribute("row");
         const col = e.target.getAttribute("col");
         if (board[row][col] === "") {
-            e.target.textContent = marker;
+            const duplicateMarker = marker.cloneNode(true);
+            e.target.appendChild(duplicateMarker);
             board[row][col] = marker;
         }
     }
@@ -56,12 +57,12 @@ const gameBoard = (() => {
         return filledCount === 9;
     }
 
-    return { displayBoard, markBoard, checkDiagonalWinner, hideBoard, isDraw };
+    return { displayBoard, markBoard, checkDiagonalWinner, emptyBoard, isDraw };
 })();
 
 // Factory Functions
-const playerFactory = function(marker) {
-    const playerMarker = marker;
+const playerFactory = function() {
+    let playerMarker = "";
     let playerName = "";
 
     const rows = [3, 3, 3];
@@ -69,6 +70,19 @@ const playerFactory = function(marker) {
 
     const setPlayerName = function(name) {
         playerName = name;
+    }
+
+    const getPlayerName = function() {
+        return playerName;
+    }
+
+    const setPlayerMarker = function(marker) {
+        marker.style.cssText = "";
+        playerMarker = marker;
+    }
+
+    const getPlayerMarker = function() {
+        return playerMarker;
     }
 
     const play = function(e) {
@@ -88,7 +102,6 @@ const playerFactory = function(marker) {
 
     const checkWin = function() {
         for (let i = 0; i < 3; i++) {
-            console.log(rows[i]);
             if (rows[i] === 0 || cols[i] === 0 || gameBoard.checkDiagonalWinner(playerMarker)) {
                 UIController.displayEndGame(true, playerName);
                 return true;
@@ -97,18 +110,24 @@ const playerFactory = function(marker) {
         return false;
     };
 
-    return { play, checkWin, setPlayerName, resetRowsAndCols };
+    return { play, checkWin, setPlayerName, getPlayerName, resetRowsAndCols, getPlayerMarker, setPlayerMarker };
 }
 
 const gameFlow = (() => {
-    let player1 = playerFactory("X");
-    let player2 = playerFactory("O");
+    let player1 = playerFactory();
+    let player2 = playerFactory();
 
     let currentPlayer = player1;
 
-    const setUpPlayers = function(player1Name, player2Name) {
+    const setUpPlayers = function(player1Name, player2Name, player1Marker, player2Marker) {
         player1.setPlayerName(player1Name);
+        player1.setPlayerMarker(player1Marker);
         player2.setPlayerName(player2Name);
+        player2.setPlayerMarker(player2Marker);
+    }
+
+    const getPlayers = function() {
+        return [player1, player2];
     }
 
     const playRound = function(e) {
@@ -126,13 +145,14 @@ const gameFlow = (() => {
         currentPlayer = player1;
     }
 
-    return { playRound, reset, setUpPlayers };
+    return { playRound, reset, setUpPlayers, getPlayers };
 })();
 
 const UIController = (() => {
     const modesContainer = document.querySelector(".mode-selection-container");
     const playerSetupContainer = document.querySelector(".player-setup-container");
     const modal = document.querySelector(".modal");
+    const boardContainer = document.querySelector(".board-container");
 
     const clearAllDisplay = function() {
         modesContainer.style.display = "none";
@@ -178,15 +198,47 @@ const UIController = (() => {
         playerCardContainer.classList.add("player-card-container");
 
         const createPlayerContainer = function(playerIndex) {
+            function createImg(src, alt) {
+                const img = document.createElement("img");
+                img.setAttribute("src", src);
+                img.setAttribute("alt", alt);
+                img.setAttribute("class", "avatar-img");
+                img.setAttribute("data-status", "not selected");
+                img.addEventListener("click", e => {
+                    characterSelectionContainer.childNodes.forEach(node => {
+                        node.style.cssText = "";
+                        node.setAttribute("data-status", "not selected");
+                    })
+                    e.target.style.border = "2px solid yellow";
+                    e.target.style.boxShadow = "2px 2px 10px yellow";
+                    e.target.setAttribute("data-status", "selected");
+                });
+                characterSelectionContainer.appendChild(img);
+            }
+
             const container = document.createElement("div");
             container.classList.add("player-container");
+
             const header = document.createElement("h2");
             header.textContent = playerIndex;
+
             const nameInput = document.createElement("input");
             nameInput.setAttribute("placeholder", "Enter your name");
             nameInput.classList.add("player-name");
+
+            const selectAvatarTxt = document.createElement("p");
+            selectAvatarTxt.textContent = "Select Your Avatar";
+
+            const characterSelectionContainer = document.createElement("div");
+            characterSelectionContainer.classList.add("char-select-container");
+            createImg("images/elf.png", "elf character");
+            createImg("images/penguin.png", "penguin character");
+            createImg("images/snowman.png", "snowman character");
+        
             container.appendChild(header);
             container.appendChild(nameInput);
+            container.appendChild(selectAvatarTxt);
+            container.appendChild(characterSelectionContainer);
             playerCardContainer.appendChild(container);
         }
 
@@ -197,8 +249,20 @@ const UIController = (() => {
         startButton.textContent = "Start";
         startButton.addEventListener("click", () => {
             const names = document.querySelectorAll(".player-name");
-            gameFlow.setUpPlayers(names[0].value, names[1].value);
-            setUpGame();
+            const avatars = Array.from(document.querySelectorAll(".avatar-img"));
+            const selectedAvatars = avatars.filter(avatar => avatar.getAttribute("data-status") === "selected");
+            if (names[0].value.length === 0 || names[1].value.length === 0) {
+                alert("Name cannot be empty!");
+            } else if (names[0].value.length >= 10 || names[1].value.length >= 10) {
+                alert("Names cannot have greater than length 9");
+            } else if (selectedAvatars.length !== 2) {
+                alert("Each player must select an avatar");
+            } else if (selectedAvatars[0].getAttribute("alt") === selectedAvatars[1].getAttribute("alt")) {
+                alert("Players must select unique avatars")
+            } else {
+                gameFlow.setUpPlayers(names[0].value, names[1].value, selectedAvatars[0], selectedAvatars[1]);
+                setUpGame();
+            }
         });
 
         playerSetupContainer.appendChild(playerCardContainer);
@@ -207,12 +271,28 @@ const UIController = (() => {
 
     const setUpGame = function() {
         clearAllDisplay();
+
+        const [player1, player2] = gameFlow.getPlayers();
+        
+
+        const createPlayerDisplay = function(playerObj, index) {
+            const playerDescriptionContainer = document.createElement("div");
+            playerDescriptionContainer.id = `p${index}-display`;
+            const playerName = document.createElement("h2");
+            playerName.textContent = playerObj.getPlayerName() + " : ";
+            playerName.appendChild(playerObj.getPlayerMarker());
+            playerDescriptionContainer.appendChild(playerName);
+            boardContainer.insertBefore(playerDescriptionContainer  , boardContainer.firstChild);
+        }
+
         gameBoard.displayBoard();
+        
+        createPlayerDisplay(player1, 1);
+        createPlayerDisplay(player2, 2);
     }
 
     const displayEndGame = function(hasWinner, playerName="") {
         modal.style.display = "flex";
-        console.log("Hello!");
 
         const endGameDiv = document.createElement("div");
         endGameDiv.classList.add("end-game-menu");
@@ -236,7 +316,7 @@ const UIController = (() => {
         const mainMenuButton = document.createElement("button");
         mainMenuButton.textContent = "Main Menu";
         mainMenuButton.addEventListener("click", () => {
-            gameBoard.hideBoard();
+            gameBoard.emptyBoard();
             gameFlow.reset();
             setUpMode();
         });

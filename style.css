@@ -20,7 +20,7 @@ header {
     display: none;
     /* display: grid; */
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-rows: auto repeat(3, 1fr);
     width: 50%;
     height: 60vh;
     margin: 0 auto;
@@ -109,6 +109,10 @@ header {
     padding: 10px 5px;
 }
 
+.player-container > p {
+    font-size: 1.4rem;
+}
+
 .modal {
     display: none;
     justify-content: center;
@@ -145,4 +149,39 @@ header {
     padding: 5px 10px;
     font-size: 1.3rem;
     width: 45%;
+}
+
+#p1-display,
+#p2-display {
+    justify-self: center;
+    font-size: 1.25rem;
+    color: darkslateblue;
+}
+
+#p1-display > h2,
+#p2-display > h2 {
+    display: flex;
+    align-items: center;
+}
+
+
+#p1-display {
+    grid-column: 1/2;
+    grid-row: 1/2;
+}
+
+#p2-display {
+    grid-column: 3/4;
+}
+
+.char-select-container {
+    display: flex;
+    gap: 50px;
+}
+
+.char-select-container > img {
+    border: 1px solid red;
+    width: 40px;
+    height: auto;
+    padding: 10px;
 }
