@@ -132,7 +132,7 @@ const gameFlow = (() => {
 
     const playRound = function(e) {
         currentPlayer.play(e);
-        // currentPlayer.checkWin();
+
         if (!currentPlayer.checkWin() && gameBoard.isDraw()) {
             UIController.displayEndGame(false);
         };
