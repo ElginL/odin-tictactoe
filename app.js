@@ -6,16 +6,24 @@ const gameBoard = (() => {
 
     const boardContainer = document.querySelector(".board-container");
 
-    // Displayed board is empty
     const displayBoard = function() {
+        const p1Display = document.getElementById("p1-display");
+        const p2Display = document.getElementById("p2-display");
         boardContainer.innerHTML = ``;
+        if (p1Display !== null && p2Display !== null) {
+            boardContainer.appendChild(p1Display);
+            boardContainer.appendChild(p2Display);
+        }
         boardContainer.style.display = "grid";
         for (let row = 0; row < 3; row++) {
             for (let col = 0; col < 3; col++) {
-                board[row][col] = "";
+                // board[row][col] = "";
                 const boardItem = document.createElement("div");
                 boardItem.classList.add("board-grid-container");
-                boardItem.textContent = board[row][col];
+                if (board[row][col] !== "") {
+                    boardItem.appendChild(board[row][col]);
+                }
+                // boardItem.textContent = board[row][col];
                 boardItem.setAttribute("row", row);
                 boardItem.setAttribute("col", col);
                 boardItem.addEventListener("click", gameFlow.playRound);
@@ -25,23 +33,37 @@ const gameBoard = (() => {
         }
     }
 
+    const getItemAtRowCol = function(row, col) {
+        return board[row][col];
+    }
+
     const emptyBoard = function() {
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                board[i][j] = "";
+            }
+        }
         boardContainer.innerHTML = ``;
     }
 
-    const markBoard = function(marker, e) {
-        const row = e.target.getAttribute("row");
-        const col = e.target.getAttribute("col");
+    const markBoard = function(marker, row, col) {
         if (board[row][col] === "") {
             const duplicateMarker = marker.cloneNode(true);
-            e.target.appendChild(duplicateMarker);
-            board[row][col] = marker;
+            board[row][col] = duplicateMarker;
+            displayBoard();
+            return true;
         }
+        return false;
     }
 
     const checkDiagonalWinner = function(marker) {
-        const topLeftToBotRight = board[0][0] === marker && board[1][1] === marker && board[2][2] === marker;
-        const botLeftToTopRight = board[2][0] === marker && board[1][1] === marker && board[0][2] === marker;
+        marker = marker.getAttribute("alt")
+        const topLeftToBotRight = (board[0][0] !== "" && board[0][0].getAttribute("alt") === marker) && 
+                                  (board[1][1] !== "" && board[1][1].getAttribute("alt") === marker) && 
+                                  (board[2][2] !== "" && board[2][2].getAttribute("alt") === marker);
+        const botLeftToTopRight = (board[2][0] !== "" && board[2][0].getAttribute("alt") === marker) && 
+                                  (board[1][1] !== "" && board[1][1].getAttribute("alt") === marker) && 
+                                  (board[0][2] !== "" && board[0][2].getAttribute("alt") === marker);
         return topLeftToBotRight || botLeftToTopRight;
     }
 
@@ -57,13 +79,14 @@ const gameBoard = (() => {
         return filledCount === 9;
     }
 
-    return { displayBoard, markBoard, checkDiagonalWinner, emptyBoard, isDraw };
+    return { displayBoard, markBoard, checkDiagonalWinner, emptyBoard, isDraw, getItemAtRowCol };
 })();
 
 // Factory Functions
 const playerFactory = function() {
     let playerMarker = "";
     let playerName = "";
+    let botStatus = false;
 
     const rows = [3, 3, 3];
     const cols = [3, 3, 3];
@@ -85,13 +108,42 @@ const playerFactory = function() {
         return playerMarker;
     }
 
+    const setBot = function() {
+        botStatus = true;
+    }
+
+    const isBot = function() {
+        return botStatus;
+    }
+
     const play = function(e) {
-        if (e.target.textContent === "") {
-            rows[e.target.getAttribute("row")] -= 1;
-            cols[e.target.getAttribute("col")] -= 1;
+        const row = e.currentTarget.getAttribute("row");
+        const col = e.currentTarget.getAttribute("col");
+
+        if (gameBoard.getItemAtRowCol(row, col) === "") {
+            rows[parseInt(row)] -= 1;
+            cols[parseInt(col)] -= 1;
         }
-        gameBoard.markBoard(playerMarker, e);
+
+        gameBoard.markBoard(playerMarker, row, col);
     };
+
+    const botPlay = function() {
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+
+        let rowIndex = randInt(0, 2);
+        let colIndex = randInt(0, 2);
+
+        while (!gameBoard.markBoard(playerMarker, rowIndex, colIndex)) {
+            rowIndex = randInt(0, 2);
+            colIndex = randInt(0, 2);
+        }
+
+        rows[parseInt(rowIndex)] -= 1;
+        cols[parseInt(colIndex)] -= 1;
+    }
 
     const resetRowsAndCols = function() {
         for (let i = 0; i < 3; i++) {
@@ -110,8 +162,40 @@ const playerFactory = function() {
         return false;
     };
 
-    return { play, checkWin, setPlayerName, getPlayerName, resetRowsAndCols, getPlayerMarker, setPlayerMarker };
+    return { play, checkWin, setPlayerName, getPlayerName, resetRowsAndCols, getPlayerMarker, setPlayerMarker, setBot, isBot, botPlay };
 }
+
+const bot = (() => {
+    const robotAvatar = document.createElement("img");
+    robotAvatar.setAttribute("src", "images/robotavatar.png");
+    robotAvatar.setAttribute("alt", "robot avatar");
+
+    const getAvatarTag = function() {
+        return robotAvatar;
+    }
+
+    const getBotName = function() {
+        return "Smarty";
+    }
+
+    // const play = function() {
+    //     function randInt(min, max) {
+    //         return Math.floor(Math.random() * (max - min + 1) + min);
+    //     }
+
+    //     let rowIndex = randInt(0, 2);
+    //     let colIndex = randInt(0, 2);
+
+    //     while (!gameBoard.markBoard(robotAvatar, rowIndex, colIndex)) {
+    //         rowIndex = randInt(0, 2);
+    //         colIndex = randInt(0, 2);
+    //     }
+    //     // gameBoard.markBoard(robotAvatar, rowIndex, colIndex);
+    // }
+
+    return { getAvatarTag, getBotName };
+
+})();
 
 const gameFlow = (() => {
     let player1 = playerFactory();
@@ -119,11 +203,14 @@ const gameFlow = (() => {
 
     let currentPlayer = player1;
 
-    const setUpPlayers = function(player1Name, player2Name, player1Marker, player2Marker) {
+    const setUpPlayers = function(player1Name, player1Marker, player2Marker, player2Name, isBot=false) {
         player1.setPlayerName(player1Name);
         player1.setPlayerMarker(player1Marker);
         player2.setPlayerName(player2Name);
         player2.setPlayerMarker(player2Marker);
+        if (isBot) {
+            player2.setBot();
+        }
     }
 
     const getPlayers = function() {
@@ -135,8 +222,18 @@ const gameFlow = (() => {
 
         if (!currentPlayer.checkWin() && gameBoard.isDraw()) {
             UIController.displayEndGame(false);
+            return;
         };
+
         currentPlayer = currentPlayer === player1 ? player2 : player1;
+        if (currentPlayer.isBot()) {
+            currentPlayer.botPlay();
+            if (!currentPlayer.checkWin() && gameBoard.isDraw()) {
+                UIController.displayEndGame(false);
+                return;
+            };
+            currentPlayer = player1;
+        }
     };
 
     const reset = function() {
@@ -188,8 +285,34 @@ const UIController = (() => {
         createCard("Player vs Player", "pvp.png", setUpPlayers);
 
         // Player vs AI card
-        createCard("Player vs AI", "pvb.png", () => console.log("PVB"));
+        createCard("Player vs AI", "pvb.png", setUpPlayerAI);
     };
+
+    const setUpPlayerAI = function() {
+        setUpPlayers();
+
+        // Removes player 2 setup box
+        playerSetupContainer.firstChild.removeChild(playerSetupContainer.firstChild.lastChild);
+
+        // Reset start button event listener to start a Player Vs AI match
+        const button = playerSetupContainer.lastChild.cloneNode(true);
+        playerSetupContainer.replaceChild(button, playerSetupContainer.lastChild);
+        button.addEventListener("click", () => {
+            const playerName = document.querySelector(".player-name").value;
+            const avatars = Array.from(document.querySelectorAll(".avatar-img"));
+            const playerAvatar = avatars.filter(avatar => avatar.getAttribute("data-status") === "selected")[0];
+            const robotAvatar = bot.getAvatarTag();
+            if (playerName === "") {
+                alert("Player name cannot be empty");
+            } else if (playerAvatar === undefined) {
+                alert("Player must choose an avatar");
+            } else {
+                gameFlow.setUpPlayers(playerName, playerAvatar, robotAvatar, bot.getBotName(), true);
+                setUpGame();
+            }
+        })
+    }
+
 
     const setUpPlayers = function() {
         clearAllDisplay();
@@ -260,7 +383,7 @@ const UIController = (() => {
             } else if (selectedAvatars[0].getAttribute("alt") === selectedAvatars[1].getAttribute("alt")) {
                 alert("Players must select unique avatars")
             } else {
-                gameFlow.setUpPlayers(names[0].value, names[1].value, selectedAvatars[0], selectedAvatars[1]);
+                gameFlow.setUpPlayers(names[0].value, selectedAvatars[0], selectedAvatars[1], names[1].value);
                 setUpGame();
             }
         });
@@ -285,6 +408,7 @@ const UIController = (() => {
             boardContainer.insertBefore(playerDescriptionContainer  , boardContainer.firstChild);
         }
 
+        gameBoard.emptyBoard();
         gameBoard.displayBoard();
         
         createPlayerDisplay(player1, 1);
