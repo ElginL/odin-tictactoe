@@ -1,4 +1,3 @@
-// Modules
 const gameBoard = (() => {
     const board = [["", "", ""],
                    ["", "", ""],
@@ -7,6 +6,7 @@ const gameBoard = (() => {
     const boardContainer = document.querySelector(".board-container");
 
     const displayBoard = function() {
+        // Discard everything except for the respective players display above the grid if it exists
         const p1Display = document.getElementById("p1-display");
         const p2Display = document.getElementById("p2-display");
         boardContainer.innerHTML = ``;
@@ -15,15 +15,16 @@ const gameBoard = (() => {
             boardContainer.appendChild(p2Display);
         }
         boardContainer.style.display = "grid";
+
+        // Fill grid according to what is in variable board
         for (let row = 0; row < 3; row++) {
             for (let col = 0; col < 3; col++) {
-                // board[row][col] = "";
                 const boardItem = document.createElement("div");
                 boardItem.classList.add("board-grid-container");
                 if (board[row][col] !== "") {
                     boardItem.appendChild(board[row][col]);
                 }
-                // boardItem.textContent = board[row][col];
+
                 boardItem.setAttribute("row", row);
                 boardItem.setAttribute("col", col);
                 boardItem.addEventListener("click", gameFlow.playRound);
@@ -82,12 +83,12 @@ const gameBoard = (() => {
     return { displayBoard, markBoard, checkDiagonalWinner, emptyBoard, isDraw, getItemAtRowCol };
 })();
 
-// Factory Functions
 const playerFactory = function() {
     let playerMarker = "";
     let playerName = "";
     let botStatus = false;
 
+    // Variables that traces row or col victory
     const rows = [3, 3, 3];
     const cols = [3, 3, 3];
 
@@ -123,9 +124,11 @@ const playerFactory = function() {
         if (gameBoard.getItemAtRowCol(row, col) === "") {
             rows[parseInt(row)] -= 1;
             cols[parseInt(col)] -= 1;
+            gameBoard.markBoard(playerMarker, row, col);
+            return true;
         }
 
-        gameBoard.markBoard(playerMarker, row, col);
+        return false;
     };
 
     const botPlay = function() {
@@ -178,21 +181,6 @@ const bot = (() => {
         return "Smarty";
     }
 
-    // const play = function() {
-    //     function randInt(min, max) {
-    //         return Math.floor(Math.random() * (max - min + 1) + min);
-    //     }
-
-    //     let rowIndex = randInt(0, 2);
-    //     let colIndex = randInt(0, 2);
-
-    //     while (!gameBoard.markBoard(robotAvatar, rowIndex, colIndex)) {
-    //         rowIndex = randInt(0, 2);
-    //         colIndex = randInt(0, 2);
-    //     }
-    //     // gameBoard.markBoard(robotAvatar, rowIndex, colIndex);
-    // }
-
     return { getAvatarTag, getBotName };
 
 })();
@@ -201,6 +189,7 @@ const gameFlow = (() => {
     let player1 = playerFactory();
     let player2 = playerFactory();
 
+    // Game starting player
     let currentPlayer = player1;
 
     const setUpPlayers = function(player1Name, player1Marker, player2Marker, player2Name, isBot=false) {
@@ -218,22 +207,32 @@ const gameFlow = (() => {
     }
 
     const playRound = function(e) {
-        currentPlayer.play(e);
-
-        if (!currentPlayer.checkWin() && gameBoard.isDraw()) {
-            UIController.displayEndGame(false);
-            return;
-        };
-
-        currentPlayer = currentPlayer === player1 ? player2 : player1;
-        if (currentPlayer.isBot()) {
-            currentPlayer.botPlay();
-            if (!currentPlayer.checkWin() && gameBoard.isDraw()) {
+        function checkRoundOver() {
+            if (currentPlayer.checkWin()) {
+                return true;
+            } else if (gameBoard.isDraw()) {
                 UIController.displayEndGame(false);
-                return;
-            };
-            currentPlayer = player1;
+                return true;
+            } else {
+                return false;
+            }
         }
+        if (currentPlayer.play(e)) {
+            if (checkRoundOver()) {
+                return;
+            }
+ 
+            currentPlayer = currentPlayer === player1 ? player2 : player1;
+            if (currentPlayer.isBot()) {
+                currentPlayer.botPlay();
+                if (checkRoundOver()) {
+                    return;
+                }
+
+                currentPlayer = player1;
+            }
+        }
+
     };
 
     const reset = function() {
@@ -396,7 +395,6 @@ const UIController = (() => {
         clearAllDisplay();
 
         const [player1, player2] = gameFlow.getPlayers();
-        
 
         const createPlayerDisplay = function(playerObj, index) {
             const playerDescriptionContainer = document.createElement("div");
@@ -405,7 +403,7 @@ const UIController = (() => {
             playerName.textContent = playerObj.getPlayerName() + " : ";
             playerName.appendChild(playerObj.getPlayerMarker());
             playerDescriptionContainer.appendChild(playerName);
-            boardContainer.insertBefore(playerDescriptionContainer  , boardContainer.firstChild);
+            boardContainer.insertBefore(playerDescriptionContainer, boardContainer.firstChild);
         }
 
         gameBoard.emptyBoard();
@@ -457,7 +455,4 @@ const UIController = (() => {
     return { setUpMode, displayEndGame };
 })();
 
-
-// Might delete later
-// gameBoard.displayBoard();
 UIController.setUpMode();
