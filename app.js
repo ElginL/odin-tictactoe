@@ -109,8 +109,12 @@ const playerFactory = function() {
         return playerMarker;
     }
 
-    const setBot = function() {
-        botStatus = true;
+    const setBot = function(bool) {
+        if (bool) {
+            botStatus = true;
+        } else {
+            botStatus = false;
+        }
     }
 
     const isBot = function() {
@@ -198,7 +202,7 @@ const gameFlow = (() => {
         player2.setPlayerName(player2Name);
         player2.setPlayerMarker(player2Marker);
         if (isBot) {
-            player2.setBot();
+            player2.setBot(true);
         }
     }
 
@@ -238,6 +242,7 @@ const gameFlow = (() => {
     const reset = function() {
         player1.resetRowsAndCols();
         player2.resetRowsAndCols();
+        player2.setBot(false);
         currentPlayer = player1;
     }
 
