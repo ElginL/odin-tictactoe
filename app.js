@@ -239,10 +239,12 @@ const gameFlow = (() => {
 
     };
 
-    const reset = function() {
+    const reset = function(hardReset) {
         player1.resetRowsAndCols();
         player2.resetRowsAndCols();
-        player2.setBot(false);
+        if (hardReset) {
+            player2.setBot(false);
+        }
         currentPlayer = player1;
     }
 
@@ -436,7 +438,7 @@ const UIController = (() => {
         const restartButton = document.createElement("button");
         restartButton.textContent = "Restart";
         restartButton.addEventListener("click", () => {
-            gameFlow.reset();
+            gameFlow.reset(false);
             setUpGame();
         });
 
@@ -444,7 +446,7 @@ const UIController = (() => {
         mainMenuButton.textContent = "Main Menu";
         mainMenuButton.addEventListener("click", () => {
             gameBoard.emptyBoard();
-            gameFlow.reset();
+            gameFlow.reset(true);
             setUpMode();
         });
 
